@@ -12,6 +12,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class Main {
@@ -23,14 +24,13 @@ public class Main {
         ) throws IOException, InterruptedException {
             StringTokenizer itr = new StringTokenizer(value.toString());
             while (itr.hasMoreTokens()) {
-                String currentVal = itr.nextToken();
-                String[] keysValues = currentVal.split("\t");
-                String currKey = keysValues[0];
+                String currKey = itr.nextToken();
+                String val = itr.nextToken();
                 word.set(currKey);
-                String[] values = keysValues[1].split(",");
                 if (currKey.equals("*")) {
-                    context.write(word, new Text(keysValues[1]));
+                    context.write(word, new Text(val));
                 } else {
+                    String[] values = val.split(",");
                     context.write(new Text("0N" + values[0]),word);
                     context.write(new Text("1N" + values[1]),word);
                     context.write(new Text("0T" + values[0]),new Text(values[1] + "," + currKey));
@@ -45,31 +45,41 @@ public class Main {
                            Context context
         ) throws IOException, InterruptedException {
             if (key.toString().equals("*")){
-                //TODO
+                context.write(key,values.iterator().next());
             }
             else if (key.toString().charAt(1) == 'N'){
-                Text valueOfN = new Text();
-                valueOfN.set(String.valueOf(Iterables.size(values)));
+                int N = 0;
+                Text textOfN = new Text();
+                ArrayList<Text> valuesTextArray = new ArrayList<>();
                 for (Text value : values){
-                    context.write(value,valueOfN);
+                    valuesTextArray.add(value);
+                    N += 1;
+                }
+                textOfN.set(key.toString() + String.valueOf(N));
+                for (Text value : valuesTextArray){
+                    System.out.println("Got here! N VALUE!: " + value.toString() + " Value of Total N: " + textOfN);
+                    context.write(value,textOfN);
                 }
             }
             else if (key.toString().charAt(1) == 'T'){
                 int valueOfT = 0;
-                Iterable<Text> temp = Lists.newArrayList(values);
-                for (Text value : temp){
+                ArrayList<Text> valuesTextArray = new ArrayList<>();
+                for (Text value : values){
                     String[] splitValueByComma = value.toString().split(",");
                     int recordValue = Integer.parseInt(splitValueByComma[0]);
                     valueOfT += recordValue;
+                    Text keyWithoutStartingNumber = new Text();
+                    keyWithoutStartingNumber.set(splitValueByComma[1] + "," + splitValueByComma[2] + "," + splitValueByComma[3]);
+                    valuesTextArray.add(keyWithoutStartingNumber);
                 }
                 Text sendValueOfT = new Text();
-                sendValueOfT.set(String.valueOf(valueOfT));
-                for (Text value: values){
+
+                for (Text value: valuesTextArray){
+                    sendValueOfT.set(key.toString() + String.valueOf(valueOfT));
+                    System.out.println("Got here! T VALUE!: " + value.toString() + " Value of Total N:" + sendValueOfT);
                     context.write(value,sendValueOfT);
                 }
-
             }
-
             }
         }
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
