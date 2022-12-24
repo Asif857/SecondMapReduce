@@ -46,6 +46,7 @@ public class Main {
         ) throws IOException, InterruptedException {
             if (key.toString().equals("*")){
                 context.write(key,values.iterator().next());
+                System.out.println("Real Context" + context.toString());
             }
             else if (key.toString().charAt(1) == 'N'){
                 int N = 0;
@@ -76,7 +77,7 @@ public class Main {
 
                 for (Text value: valuesTextArray){
                     sendValueOfT.set(key.toString() + String.valueOf(valueOfT));
-                    System.out.println("Got here! T VALUE!: " + value.toString() + " Value of Total N:" + sendValueOfT);
+                    System.out.println("Got here! T VALUE!: " + value.toString() + " Value of Total T:" + sendValueOfT);
                     context.write(value,sendValueOfT);
                 }
             }
@@ -87,7 +88,6 @@ public class Main {
         Job job = Job.getInstance(conf, "EMR2");
         job.setJarByClass(Main.class);
         job.setMapperClass(TokenizerMapper.class);
-        job.setCombinerClass(ParametersReducer.class);
         job.setReducerClass(ParametersReducer.class);
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(Text.class);
