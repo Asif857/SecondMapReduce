@@ -1,7 +1,4 @@
 package org.example;
-
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -27,39 +24,48 @@ public class Main {
                 String currKey = itr.nextToken();
                 String val = itr.nextToken();
                 word.set(currKey);
-                if (currKey.equals("*")) {
-                    context.write(word, new Text(val));
-                } else {
-                    String[] values = val.split(",");
-                    context.write(new Text("0N" + values[0]),word);
-                    context.write(new Text("1N" + values[1]),word);
-                    context.write(new Text("0T" + values[0]),new Text(values[1] + "," + currKey));
-                    context.write(new Text("1T" + values[1]),new Text(values[0] + "," + currKey));
+                String[] values = val.split(",");
+                if ("m_X,pleased,_ADP_".equals(currKey)){
+                    System.out.println(new Text("0N" + values[0]) + " value: " + word);
+                    System.out.println(new Text("1N" + values[1])+ " value: " + word);
+                    System.out.println(new Text("0T" + values[0])+ " value: " + values[1] + "," + currKey);
+                    System.out.println(new Text("1N" + values[1])+ " value: " + values[0] + "," + currKey);
                 }
+                context.write(new Text("0N" + values[0]),word);
+                context.write(new Text("1N" + values[1]),word);
+                context.write(new Text("0T" + values[0]),new Text(values[1] + "," + currKey));
+                context.write(new Text("1T" + values[1]),new Text(values[0] + "," + currKey));
             }
         }
     }
+    //0NV   m_X,pleased,_ADP_
     public static class ParametersReducer
             extends Reducer<Text,Text,Text,Text> {
         public void reduce(Text key, Iterable<Text> values,
                            Context context
         ) throws IOException, InterruptedException {
-            if (key.toString().equals("*")){
-                context.write(key,values.iterator().next());
-                System.out.println("Real Context" + context.toString());
-            }
-            else if (key.toString().charAt(1) == 'N'){
+            if (key.toString().charAt(1) == 'N'){
                 int N = 0;
+                int i = 0;
                 Text textOfN = new Text();
-                ArrayList<Text> valuesTextArray = new ArrayList<>();
+                if (key.toString().equals("0N10")) {
+                    System.out.println("changed");
+                    i = 1;
+                }
+                ArrayList<String> valuesTextArray = new ArrayList<>();
                 for (Text value : values){
-                    valuesTextArray.add(value);
+                    if (i==1){
+                        System.out.println("value: " + value.toString() + "key: " + key.toString());
+                    }
+                    valuesTextArray.add(value.toString());
                     N += 1;
                 }
-                textOfN.set(key.toString() + String.valueOf(N));
-                for (Text value : valuesTextArray){
-                    System.out.println("Got here! N VALUE!: " + value.toString() + " Value of Total N: " + textOfN);
-                    context.write(value,textOfN);
+                textOfN.set(key.toString().substring(0,2) + N);
+                for (String value : valuesTextArray){
+                    if (i==1){
+                        System.out.println("value To Enter: " + value.toString() + "key: " + key.toString());
+                    }
+                    context.write(new Text(value),textOfN);
                 }
             }
             else if (key.toString().charAt(1) == 'T'){
@@ -76,8 +82,7 @@ public class Main {
                 Text sendValueOfT = new Text();
 
                 for (Text value: valuesTextArray){
-                    sendValueOfT.set(key.toString() + String.valueOf(valueOfT));
-                    System.out.println("Got here! T VALUE!: " + value.toString() + " Value of Total T:" + sendValueOfT);
+                    sendValueOfT.set(key.toString().substring(0,2) + String.valueOf(valueOfT));
                     context.write(value,sendValueOfT);
                 }
             }
@@ -93,7 +98,6 @@ public class Main {
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-        //TODO
         //FileInputFormat.addInputPath(job, new Path(args[1]));
         //FileOutputFormat.setOutputPath(job, new Path(args[2]));
         FileInputFormat.addInputPath(job, new Path(args[0]));
