@@ -28,14 +28,13 @@ public class Main {
             while (itr.hasMoreTokens()) {
                 String currKey = itr.nextToken();
                 String val = itr.nextToken();
-                word.set("0" + "," + currKey);
-                Text wordPlusOne = new Text("1" + "," + currKey);
+                word.set(currKey);
                 String[] values = val.split(",");
-                context.write(new Text("0N" + values[0]),wordPlusOne);
-                context.write(new Text("1N" + values[1]),wordPlusOne);
-                context.write(new Text("0T" + values[0]),new Text(values[1] + "," + currKey));
-                context.write(new Text("1T" + values[1]),new Text(values[0] + "," + currKey));
-                context.write(new Text("RRR" + values[2]),new Text(word));
+                context.write(new Text(values[0] + "0N"),word);
+                context.write(new Text(values[1] + "1N"),word);
+                context.write(new Text(values[0] + "0T"),new Text(values[1] + "," + currKey));
+                context.write(new Text(values[1] + "1T"),new Text(values[0] + "," + currKey));
+                context.write(new Text(values[2] + "1U"),new Text(word));
             }
         }
     }
@@ -48,20 +47,8 @@ public class Main {
         public void reduce(Text key, Iterable<Text> values,
                            Context context
         ) throws IOException, InterruptedException {
-            if (key.toString().substring(0,3).equals("RRR")){
-                float N = Float.parseFloat(context.getConfiguration().get("N"));
-                for (Text value: values){
-                    float pr = (T1 + T0)/(N*(N1 + N0));
-                    String newValue = value.toString().replaceAll(",", " ");
-                    context.write(new Text(newValue),new Text(String.valueOf(pr)));
-                }
-                 N0 = 0;
-                 N1 = 0;
-                 T0 = 0;
-                 T1 = 0;
-            }
-            else {
-                switch (key.toString().substring(0,2)){
+            System.out.println(key);
+                switch (key.toString().substring(key.getLength() - 2)){
                     case "0N":
                         for(Text value : values)
                             N0++;
@@ -77,11 +64,24 @@ public class Main {
                     case "1T":
                         for(Text value : values)
                             T1 += Float.parseFloat(value.toString().split(",")[0]);
+                    case "1U":
+                        float N = Float.parseFloat(context.getConfiguration().get("N"));
+                        float pr = -1;
+                        if (N1 != 0 || N0 != 0) {
+                            pr = (T1 + T0) / (N * (N1 + N0));
+                        }
+                        for (Text value: values){
+                            String newValue = value.toString().replaceAll(",", " ");
+                            context.write(new Text(newValue),new Text(String.valueOf(pr)));
+                        }
+                        N0 = 0;
+                        N1 = 0;
+                        T0 = 0;
+                        T1 = 0;
                         break;
                 }
             }
             }
-        }
     public static class CustomPartitioner extends Partitioner<Text,Text> {
         private int numOfReducers;
         CustomPartitioner(int numOfReducers){
@@ -98,8 +98,10 @@ public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
         Configuration conf = new Configuration();
+        conf.set("N","5673");
         Job job = Job.getInstance(conf, "EMR2");
         int numReducers = job.getNumReduceTasks();
+        System.out.println(conf.get("N"));
         CustomPartitioner partitioner = new CustomPartitioner(numReducers);
         job.setPartitionerClass(partitioner.getClass());
         job.setJarByClass(Main.class);
