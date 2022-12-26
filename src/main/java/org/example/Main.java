@@ -47,7 +47,7 @@ public class Main {
                 float N = Float.parseFloat(context.getConfiguration().get("N"));
                 for (Text value: values){
                     float pr = (T1 + T0)/(N*(N1 + N0));
-                    String newkey = key.toString().replaceAll(",", " ");
+                    String newkey = value.toString().replaceAll(",", " ");
                     context.write(new Text(newkey),new Text(String.valueOf(pr)));
                 }
                  N0 = 0;
