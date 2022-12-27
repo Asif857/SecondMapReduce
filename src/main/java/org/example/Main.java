@@ -96,7 +96,7 @@ public class Main {
         Job job = Job.getInstance(conf, "EMR2");
         int numReducers = job.getNumReduceTasks();
         System.out.println(conf.get("N"));
-        job.setPartitionerClass(CustomPartitioner.getClass());
+        job.setPartitionerClass(CustomPartitioner.class);
         job.setJarByClass(Main.class);
         job.setMapperClass(TokenizerMapper.class);
         job.setReducerClass(ParametersReducer.class);
