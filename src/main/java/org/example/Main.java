@@ -86,7 +86,7 @@ public class Main {
             }
     public static class CustomPartitioner extends Partitioner<Text,Text> {
         public int getPartition(Text key, Text value, int numOfReducers) {
-            int r = Integer.parseInt(key.toString().substring(2));
+            int r = Integer.parseInt(key.toString().substring(0,key.getLength() - 2));
             return (r % numOfReducers);
         }
     }
