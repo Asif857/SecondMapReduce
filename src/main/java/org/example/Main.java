@@ -64,9 +64,11 @@ public class Main {
                     case "1T":
                         for(Text value : values)
                             T1 += Float.parseFloat(value.toString().split(",")[0]);
+                        break;
                     case "1U":
                         float N = Float.parseFloat(context.getConfiguration().get("N"));
                         float pr = -1;
+                        System.out.println("r: "+key.toString().substring(0,key.getLength() - 2)+", N1: "+N1+", N0: "+N0+", +T0: "+T0+", +T1: "+T1);
                         if (N1 != 0 || N0 != 0) {
                             pr = (T1 + T0) / (N * (N1 + N0));
                         }
@@ -92,7 +94,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
         Configuration conf = new Configuration();
-        conf.set("N","5673");
+        conf.set("N","58");
         Job job = Job.getInstance(conf, "EMR2");
         int numReducers = job.getNumReduceTasks();
         System.out.println(conf.get("N"));
@@ -104,10 +106,10 @@ public class Main {
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-        //FileInputFormat.addInputPath(job, new Path(args[1]));
-        //FileOutputFormat.setOutputPath(job, new Path(args[2]));
-        FileInputFormat.addInputPath(job, new Path(args[0]));
-        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        FileInputFormat.addInputPath(job, new Path(args[1]));
+        FileOutputFormat.setOutputPath(job, new Path(args[2]));
+        //FileInputFormat.addInputPath(job, new Path(args[0]));
+        //FileOutputFormat.setOutputPath(job, new Path(args[1]));
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 }
