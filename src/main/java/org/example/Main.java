@@ -83,15 +83,9 @@ public class Main {
             }
             }
     public static class CustomPartitioner extends Partitioner<Text,Text> {
-        private int numOfReducers;
-        CustomPartitioner(int numOfReducers){
-            this.numOfReducers = numOfReducers;
-        }
-        @Override
-        public int getPartition(Text key, Text value, int i) {
+        public int getPartition(Text key, Text value, int numOfReducers) {
             int r = Integer.parseInt(key.toString().substring(2));
-            int partition = r % numOfReducers;
-            return partition;
+            return (r % numOfReducers);
         }
     }
 
@@ -102,8 +96,7 @@ public class Main {
         Job job = Job.getInstance(conf, "EMR2");
         int numReducers = job.getNumReduceTasks();
         System.out.println(conf.get("N"));
-        CustomPartitioner partitioner = new CustomPartitioner(numReducers);
-        job.setPartitionerClass(partitioner.getClass());
+        job.setPartitionerClass(CustomPartitioner.getClass());
         job.setJarByClass(Main.class);
         job.setMapperClass(TokenizerMapper.class);
         job.setReducerClass(ParametersReducer.class);
